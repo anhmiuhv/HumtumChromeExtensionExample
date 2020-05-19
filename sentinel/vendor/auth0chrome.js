@@ -56287,7 +56287,6 @@ var PKCEClient = (_class = /*#__PURE__*/function () {
                 localStorage.authzeroState = crypto_random_string__WEBPACK_IMPORTED_MODULE_4___default()({
                   length: 10
                 });
-                localStorage.authzeroCurrentOptions = options;
                 authOptions = Object.assign({}, options, {
                   client_id: clientId,
                   code_challenge: hashed,
@@ -56297,15 +56296,15 @@ var PKCEClient = (_class = /*#__PURE__*/function () {
                   state: localStorage.authzeroState
                 });
                 url = "https://".concat(domain, "/authorize?").concat(qs.stringify(authOptions));
-                _context4.next = 10;
+                _context4.next = 9;
                 return this.getAuthResult(url, interactive);
 
-              case 10:
+              case 9:
                 resultUrl = _context4.sent;
                 _this$extractCode = this.extractCode(resultUrl), code = _this$extractCode.code, state = _this$extractCode.state;
                 return _context4.abrupt("return", this.exchangeCodeForToken(code, secret, state));
 
-              case 13:
+              case 12:
               case "end":
                 return _context4.stop();
             }
