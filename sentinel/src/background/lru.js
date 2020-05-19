@@ -1,3 +1,12 @@
+/**
+ * A doubly linked list-based Least Recently Used (LRU) cache. Will keep most
+ * recently used items while discarding least recently used items when its limit
+ * is reached.
+ *
+ * Licensed under MIT. Copyright (c) 2010 Rasmus Andersson <http://hunch.se/>
+ * See README.md for details.
+ */
+
 (function (g, f) {
     const e = typeof exports == 'object' ? exports : typeof g == 'object' ? g : {};
     f(e);
@@ -174,5 +183,20 @@
 
         this.size--;
         return entry.value;
+    };
+
+    /** Returns a JSON (array) representation */
+    LRUMap.prototype.toJSON = function () {
+        var s = new Array(this.size),
+            i = 0,
+            entry = this.oldest;
+        while (entry) {
+            s[i++] = {
+                key: entry.key,
+                value: entry.value
+            };
+            entry = entry[NEWER];
+        }
+        return s;
     };
 })

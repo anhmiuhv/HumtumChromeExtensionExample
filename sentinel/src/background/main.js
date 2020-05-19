@@ -9,6 +9,72 @@ import Auth from "/src/background/auth.js"
 }
 */
 const filterWeb = new LRUMap(100)
+let authzero = null
+
+function listenForMessage() {
+  humtum.subscribeToChannel(
+    "MessagesChannel",
+    () => {
+      console.log("Connected to Message channel")
+    },
+    () => {
+
+    },
+    (data) => {
+      data = JSON.parse(data)
+      const {
+        website,
+        websitemsg
+      } = data && data["payload"] && JSON.parse(data["payload"])
+      console.log(data["payload"])
+      filterWeb.set(website, websitemsg)
+      humtum.receiveMessage(data["id"])
+      localStorage.webFilter = JSON.stringify(filterWeb.toJSON())
+
+
+    })
+}
+
+function refreshthetoken() {
+  authzero = new Auth0Chrome(env.AUTH0_DOMAIN, env.AUTH0_CLIENT_ID)
+  authzero.refreshToken(humtum.getAuth().getRefreshToken())
+    .then(async (authResult) => {
+      humtum.getAuth().storeAuthResult(authResult)
+      humtum.getAuth().scheduleRenewal(refreshthetoken)
+    })
+}
+
+browser.runtime.onStartup.addListener(function () {
+  if (humtum.getAuth().isAuthenticated()) {
+    refreshthetoken()
+    listenForMessage()
+  }
+
+  if (localStorage.webFilter) {
+    JSON.parse(localStorage.webFilter).forEach(v => {
+      filterWeb.set(v.key, v.value)
+    })
+  }
+})
+
+browser.runtime.onInstalled.addListener(function () {
+  if (humtum.getAuth().isAuthenticated()) {
+    authzero = new Auth0Chrome(env.AUTH0_DOMAIN, env.AUTH0_CLIENT_ID)
+    authzero.refreshToken(humtum.getAuth().getRefreshToken())
+      .then(async (authResult) => {
+        humtum.getAuth().storeAuthResult(authResult)
+        listenForMessage()
+      })
+  }
+
+  if (localStorage.webFilter) {
+    JSON.parse(localStorage.webFilter).forEach(v => {
+      filterWeb.set(v.key, v.value)
+    })
+  }
+})
+
+
 
 browser.runtime.onMessage.addListener(function (event) {
   if (event.type === 'authenticate') {
@@ -20,21 +86,24 @@ browser.runtime.onMessage.addListener(function (event) {
     //  - required if requesting the offline_access scope.
     let options = {
       scope: "openid email profile offline_access read:appdata write:appdata",
-      device: 'chrome-extension',
       audience: "com.humtum.api.sentinel",
     };
 
-    new Auth0Chrome(env.AUTH0_DOMAIN, env.AUTH0_CLIENT_ID)
+    authzero = new Auth0Chrome(env.AUTH0_DOMAIN, env.AUTH0_CLIENT_ID)
+    authzero
       .authenticate(options)
       .then(async (authResult) => {
-          await Auth.storeAuthResult(authResult)
+          humtum.getAuth().storeAuthResult(authResult)
+          console.log(authResult)
           let data = await humtum.getSelf()
           data && browser.notifications.create({
             type: 'basic',
             iconUrl: '/icons/icon128.png',
             title: 'Login Successful',
-            message: `You can use the app now, ${data.name}`
+            message: `You can use the app now`
           });
+
+          listenForMessage()
         }
 
       ).catch(function (err) {
@@ -45,26 +114,10 @@ browser.runtime.onMessage.addListener(function (event) {
           iconUrl: '/icons/icon128.png'
         });
       });
-  } else if (event.type == "refresh") {
-    humtum.subscribeToChannel(
-      "MessagesChannel",
-      () => {
-        console.log("Connected to Message channel")
-      },
-      () => {
 
-      },
-      (data) => {
-        data = JSON.parse(data)
-        const {
-          website,
-          websitemsg
-        } = data && data["payload"] && JSON.parse(data["payload"])
-        console.log(data["payload"])
-        filterWeb.set(website, websitemsg)
-        humtum.receiveMessage(data["id"])
+  } else if (event.type == "logout") {
+    humtum.getCable().disconnect()
 
-      })
   }
 });
 
@@ -72,7 +125,6 @@ browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
   const {
     url
   } = changeInfo;
-  console.log(changeInfo)
 
   if (url) {
     const pathArray = url.split('/')
@@ -88,6 +140,7 @@ browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
         iconUrl: '/icons/icon128.png'
       });
       filterWeb.delete(weburl)
+      localStorage.webFilter = JSON.stringify(filterWeb.toJSON())
     }
   }
 })

@@ -8,12 +8,12 @@ export default class Auth {
 
 
 
-    static storeAuthResult(res) {
+    storeAuthResult(res) {
         const currentAuth = {
             start: Date.now(),
             ...res
         }
-        return localStorage.humtumAuth = JSON.stringify(currentAuth)
+        localStorage.humtumAuth = JSON.stringify(currentAuth)
     }
 
     getAccessToken = () => {
@@ -22,6 +22,17 @@ export default class Auth {
 
     getIDToken = () => {
         return JSON.parse(localStorage.humtumAuth)["id_token"]
+    }
+
+    getRefreshToken = () => {
+        return JSON.parse(localStorage.humtumAuth)["refresh_token"]
+    }
+
+    scheduleRenewal = (renewalfunc) => {
+        const timeOut = JSON.parse(localStorage.humtumAuth).expires_in * 1000 - (Date.now() - JSON.parse(localStorage.humtumAuth).start)
+        setTimeout(() => {
+            renewalfunc()
+        }, Math.max(timeOut, 0));
     }
 
     getProfile = (cb) => {
@@ -36,13 +47,11 @@ export default class Auth {
         } catch (e) {
             cb(e, this.profile)
         }
-
-
     }
 
 
     logout = (cb) => {
-        localStorage.humtumAuth = null
+        localStorage.clear()
         this.profile = null
     }
 

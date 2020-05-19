@@ -7,6 +7,9 @@ function isLoggedIn(token) {
 function logout() {
   // Remove the idToken from storage
   localStorage.clear();
+  browser.runtime.sendMessage({
+    type: "logout"
+  });
   main();
 }
 
@@ -35,12 +38,6 @@ function renderProfileView(authResult) {
     });
     $('.loading').classList.add('hidden');
     $('.profile').classList.remove('hidden');
-    $('.refresh-button').addEventListener('click', () => {
-      chrome.runtime.sendMessage({
-        type: "refresh"
-      });
-    });
-
     $('.logout-button').addEventListener('click', logout);
   }).catch(logout);
 }
@@ -54,7 +51,7 @@ function renderDefaultView() {
   $('.login-button').addEventListener('click', () => {
     $('.default').classList.add('hidden');
     $('.loading').classList.remove('hidden');
-    chrome.runtime.sendMessage({
+    browser.runtime.sendMessage({
       type: "authenticate"
     });
   });

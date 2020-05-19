@@ -23645,6 +23645,112 @@ exports.constants = {
 
 /***/ }),
 
+/***/ "./node_modules/crypto-random-string/index.js":
+/*!****************************************************!*\
+  !*** ./node_modules/crypto-random-string/index.js ***!
+  \****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+const crypto = __webpack_require__(/*! crypto */ "./node_modules/crypto-browserify/index.js");
+
+const urlSafeCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~'.split('');
+const numericCharacters = '0123456789'.split('');
+const distinguishableCharacters = 'CDEHKMPRTUWXY012458'.split('');
+
+const generateForCustomCharacters = (length, characters) => {
+	// Generating entropy is faster than complex math operations, so we use the simplest way
+	const characterCount = characters.length;
+	const maxValidSelector = (Math.floor(0x10000 / characterCount) * characterCount) - 1; // Using values above this will ruin distribution when using modular division
+	const entropyLength = 2 * Math.ceil(1.1 * length); // Generating a bit more than required so chances we need more than one pass will be really low
+	let string = '';
+	let stringLength = 0;
+
+	while (stringLength < length) { // In case we had many bad values, which may happen for character sets of size above 0x8000 but close to it
+		const entropy = crypto.randomBytes(entropyLength);
+		let entropyPosition = 0;
+
+		while (entropyPosition < entropyLength && stringLength < length) {
+			const entropyValue = entropy.readUInt16LE(entropyPosition);
+			entropyPosition += 2;
+			if (entropyValue > maxValidSelector) { // Skip values which will ruin distribution when using modular division
+				continue;
+			}
+
+			string += characters[entropyValue % characterCount];
+			stringLength++;
+		}
+	}
+
+	return string;
+};
+
+const allowedTypes = [
+	undefined,
+	'hex',
+	'base64',
+	'url-safe',
+	'numeric',
+	'distinguishable'
+];
+
+module.exports = ({length, type, characters}) => {
+	if (!(length >= 0 && Number.isFinite(length))) {
+		throw new TypeError('Expected a `length` to be a non-negative finite number');
+	}
+
+	if (type !== undefined && characters !== undefined) {
+		throw new TypeError('Expected either `type` or `characters`');
+	}
+
+	if (characters !== undefined && typeof characters !== 'string') {
+		throw new TypeError('Expected `characters` to be string');
+	}
+
+	if (!allowedTypes.includes(type)) {
+		throw new TypeError(`Unknown type: ${type}`);
+	}
+
+	if (type === undefined && characters === undefined) {
+		type = 'hex';
+	}
+
+	if (type === 'hex' || (type === undefined && characters === undefined)) {
+		return crypto.randomBytes(Math.ceil(length * 0.5)).toString('hex').slice(0, length); // Need 0.5 byte entropy per character
+	}
+
+	if (type === 'base64') {
+		return crypto.randomBytes(Math.ceil(length * 0.75)).toString('base64').slice(0, length); // Need 0.75 byte of entropy per character
+	}
+
+	if (type === 'url-safe') {
+		return generateForCustomCharacters(length, urlSafeCharacters);
+	}
+
+	if (type === 'numeric') {
+		return generateForCustomCharacters(length, numericCharacters);
+	}
+
+	if (type === 'distinguishable') {
+		return generateForCustomCharacters(length, distinguishableCharacters);
+	}
+
+	if (characters.length === 0) {
+		throw new TypeError('Expected `characters` string length to be greater than or equal to 1');
+	}
+
+	if (characters.length > 0x10000) {
+		throw new TypeError('Expected `characters` string length to be less or equal to 65536');
+	}
+
+	return generateForCustomCharacters(length, characters.split(''));
+};
+
+
+/***/ }),
+
 /***/ "./node_modules/des.js/lib/des.js":
 /*!****************************************!*\
   !*** ./node_modules/des.js/lib/des.js ***!
@@ -55948,6 +56054,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var url_parse__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! url-parse */ "./node_modules/url-parse/index.js");
 /* harmony import */ var url_parse__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(url_parse__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var autobind_decorator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! autobind-decorator */ "./node_modules/autobind-decorator/lib/esm/index.js");
+/* harmony import */ var crypto_random_string__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! crypto-random-string */ "./node_modules/crypto-random-string/index.js");
+/* harmony import */ var crypto_random_string__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(crypto_random_string__WEBPACK_IMPORTED_MODULE_4__);
 
 
 var _class;
@@ -55963,6 +56071,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) { var desc = {}; Object.keys(descriptor).forEach(function (key) { desc[key] = descriptor[key]; }); desc.enumerable = !!desc.enumerable; desc.configurable = !!desc.configurable; if ('value' in desc || desc.initializer) { desc.writable = true; } desc = decorators.slice().reverse().reduce(function (desc, decorator) { return decorator(target, property, desc) || desc; }, desc); if (context && desc.initializer !== void 0) { desc.value = desc.initializer ? desc.initializer.call(context) : void 0; desc.initializer = undefined; } if (desc.initializer === void 0) { Object.defineProperty(target, property, desc); desc = null; } return desc; }
+
 
 
 
@@ -56016,13 +56125,22 @@ var PKCEClient = (_class = /*#__PURE__*/function () {
   }, {
     key: "exchangeCodeForToken",
     value: function () {
-      var _exchangeCodeForToken = _asyncToGenerator( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee2(code, verifier) {
+      var _exchangeCodeForToken = _asyncToGenerator( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee2(code, verifier, estate) {
         var domain, clientId, body, result;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee2$(_context2) {
           while (1) {
             switch (_context2.prev = _context2.next) {
               case 0:
                 domain = this.domain, clientId = this.clientId;
+
+                if (!(localStorage.authzeroState !== estate)) {
+                  _context2.next = 3;
+                  break;
+                }
+
+                throw Error("state does not match");
+
+              case 3:
                 body = JSON.stringify({
                   redirect_uri: this.getRedirectURL(),
                   grant_type: 'authorization_code',
@@ -56030,7 +56148,7 @@ var PKCEClient = (_class = /*#__PURE__*/function () {
                   client_id: clientId,
                   code: code
                 });
-                _context2.next = 4;
+                _context2.next = 6;
                 return fetch("https://".concat(domain, "/oauth/token"), {
                   method: 'POST',
                   headers: {
@@ -56039,20 +56157,20 @@ var PKCEClient = (_class = /*#__PURE__*/function () {
                   body: body
                 });
 
-              case 4:
+              case 6:
                 result = _context2.sent;
 
                 if (!result.ok) {
-                  _context2.next = 7;
+                  _context2.next = 9;
                   break;
                 }
 
                 return _context2.abrupt("return", result.json());
 
-              case 7:
+              case 9:
                 throw Error(result.statusText);
 
-              case 8:
+              case 10:
               case "end":
                 return _context2.stop();
             }
@@ -56060,11 +56178,70 @@ var PKCEClient = (_class = /*#__PURE__*/function () {
         }, _callee2, this);
       }));
 
-      function exchangeCodeForToken(_x3, _x4) {
+      function exchangeCodeForToken(_x3, _x4, _x5) {
         return _exchangeCodeForToken.apply(this, arguments);
       }
 
       return exchangeCodeForToken;
+    }()
+  }, {
+    key: "refreshToken",
+    value: function () {
+      var _refreshToken2 = _asyncToGenerator( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee3(_refreshToken) {
+        var domain, clientId, result;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                domain = this.domain, clientId = this.clientId;
+
+                if (!_refreshToken) {
+                  _context3.next = 10;
+                  break;
+                }
+
+                _context3.next = 4;
+                return fetch("https://".concat(domain, "/oauth/token"), {
+                  method: 'POST',
+                  headers: {
+                    'content-type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    grant_type: 'refresh_token',
+                    client_id: clientId,
+                    refresh_token: _refreshToken
+                  })
+                });
+
+              case 4:
+                result = _context3.sent;
+
+                if (!result.ok) {
+                  _context3.next = 7;
+                  break;
+                }
+
+                return _context3.abrupt("return", result.json());
+
+              case 7:
+                throw Error(result.statusText);
+
+              case 10:
+                throw Error("refresh_token is empty");
+
+              case 11:
+              case "end":
+                return _context3.stop();
+            }
+          }
+        }, _callee3, this);
+      }));
+
+      function refreshToken(_x6) {
+        return _refreshToken2.apply(this, arguments);
+      }
+
+      return refreshToken;
     }()
   }, {
     key: "extractCode",
@@ -56075,12 +56252,15 @@ var PKCEClient = (_class = /*#__PURE__*/function () {
         throw new Error(response.error_description || response.error);
       }
 
-      return response.code;
+      return {
+        code: response.code,
+        state: response.state
+      };
     }
   }, {
     key: "authenticate",
     value: function () {
-      var _authenticate = _asyncToGenerator( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee3() {
+      var _authenticate = _asyncToGenerator( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee4() {
         var options,
             interactive,
             domain,
@@ -56088,41 +56268,49 @@ var PKCEClient = (_class = /*#__PURE__*/function () {
             _generateRandomChalle,
             secret,
             hashed,
+            authOptions,
             url,
             resultUrl,
+            _this$extractCode,
             code,
-            _args3 = arguments;
+            state,
+            _args4 = arguments;
 
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee3$(_context3) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee4$(_context4) {
           while (1) {
-            switch (_context3.prev = _context3.next) {
+            switch (_context4.prev = _context4.next) {
               case 0:
-                options = _args3.length > 0 && _args3[0] !== undefined ? _args3[0] : {};
-                interactive = _args3.length > 1 && _args3[1] !== undefined ? _args3[1] : true;
+                options = _args4.length > 0 && _args4[0] !== undefined ? _args4[0] : {};
+                interactive = _args4.length > 1 && _args4[1] !== undefined ? _args4[1] : true;
                 domain = this.domain, clientId = this.clientId;
                 _generateRandomChalle = Object(_generateRandomChallengePair__WEBPACK_IMPORTED_MODULE_1__["default"])(), secret = _generateRandomChalle.secret, hashed = _generateRandomChalle.hashed;
-                Object.assign(options, {
+                localStorage.authzeroState = crypto_random_string__WEBPACK_IMPORTED_MODULE_4___default()({
+                  length: 10
+                });
+                localStorage.authzeroCurrentOptions = options;
+                authOptions = Object.assign({}, options, {
                   client_id: clientId,
                   code_challenge: hashed,
                   redirect_uri: this.getRedirectURL(),
                   code_challenge_method: 'S256',
-                  response_type: 'code'
+                  response_type: 'code',
+                  state: localStorage.authzeroState
                 });
-                url = "https://".concat(domain, "/authorize?").concat(qs.stringify(options));
-                _context3.next = 8;
+                url = "https://".concat(domain, "/authorize?").concat(qs.stringify(authOptions));
+                _context4.next = 10;
                 return this.getAuthResult(url, interactive);
 
-              case 8:
-                resultUrl = _context3.sent;
-                code = this.extractCode(resultUrl);
-                return _context3.abrupt("return", this.exchangeCodeForToken(code, secret));
+              case 10:
+                resultUrl = _context4.sent;
+                _this$extractCode = this.extractCode(resultUrl), code = _this$extractCode.code, state = _this$extractCode.state;
+                return _context4.abrupt("return", this.exchangeCodeForToken(code, secret, state));
 
-              case 11:
+              case 13:
               case "end":
-                return _context3.stop();
+                return _context4.stop();
             }
           }
-        }, _callee3, this);
+        }, _callee4, this);
       }));
 
       function authenticate() {
@@ -56134,7 +56322,7 @@ var PKCEClient = (_class = /*#__PURE__*/function () {
   }]);
 
   return PKCEClient;
-}(), (_applyDecoratedDescriptor(_class.prototype, "exchangeCodeForToken", [autobind_decorator__WEBPACK_IMPORTED_MODULE_3__["boundMethod"]], Object.getOwnPropertyDescriptor(_class.prototype, "exchangeCodeForToken"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "authenticate", [autobind_decorator__WEBPACK_IMPORTED_MODULE_3__["boundMethod"]], Object.getOwnPropertyDescriptor(_class.prototype, "authenticate"), _class.prototype)), _class);
+}(), (_applyDecoratedDescriptor(_class.prototype, "exchangeCodeForToken", [autobind_decorator__WEBPACK_IMPORTED_MODULE_3__["boundMethod"]], Object.getOwnPropertyDescriptor(_class.prototype, "exchangeCodeForToken"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "refreshToken", [autobind_decorator__WEBPACK_IMPORTED_MODULE_3__["boundMethod"]], Object.getOwnPropertyDescriptor(_class.prototype, "refreshToken"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "authenticate", [autobind_decorator__WEBPACK_IMPORTED_MODULE_3__["boundMethod"]], Object.getOwnPropertyDescriptor(_class.prototype, "authenticate"), _class.prototype)), _class);
 /* harmony default export */ __webpack_exports__["default"] = (PKCEClient);
 
 /***/ }),
