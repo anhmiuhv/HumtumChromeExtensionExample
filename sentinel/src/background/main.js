@@ -12,6 +12,9 @@ const filterWeb = new LRUMap(100)
 let authzero = null
 
 function listenForMessage() {
+  humtum.getCable().subscriptions.subscriptions.forEach(e => {
+    humtum.getCable().subscriptions.remove(e)
+  })
   humtum.subscribeToChannel(
     "MessagesChannel",
     () => {
@@ -113,6 +116,8 @@ browser.runtime.onMessage.addListener(function (event) {
 
   } else if (event.type == "logout") {
     humtum.getCable().disconnect()
+    filterWeb.clear()
+    localStorage.webFilter = JSON.stringify(filterWeb.toJSON())
 
   }
 });

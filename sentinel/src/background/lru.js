@@ -74,6 +74,13 @@
         this.newest = entry;
     };
 
+    LRUMap.prototype.clear = function () {
+        // Not clearing links should be safe, as we don't expose live links to user
+        this.oldest = this.newest = undefined;
+        this.size = 0;
+        this._keymap.clear();
+    };
+
     LRUMap.prototype.assign = function (entries) {
         let entry, limit = this.limit || Number.MAX_VALUE;
         this._keymap.clear();
