@@ -58,4 +58,8 @@ export default class Auth {
     isAuthenticated = () => {
         return localStorage.humtumAuth !== null
     }
+
+    isValid = () => {
+        return JSON.parse(localStorage.humtumAuth).expires_in * 1000 - (Date.now() - JSON.parse(localStorage.humtumAuth).start) > 0
+    }
 }

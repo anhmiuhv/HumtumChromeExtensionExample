@@ -45,7 +45,7 @@ function refreshthetoken() {
 }
 
 browser.runtime.onStartup.addListener(function () {
-  if (humtum.getAuth().isAuthenticated()) {
+  if (humtum.getAuth().isAuthenticated() && humtum.getAuth().isValid()) {
     refreshthetoken()
     listenForMessage()
   }
@@ -58,7 +58,7 @@ browser.runtime.onStartup.addListener(function () {
 })
 
 browser.runtime.onInstalled.addListener(function () {
-  if (humtum.getAuth().isAuthenticated()) {
+  if (humtum.getAuth().isAuthenticated() && humtum.getAuth().isValid()) {
     refreshthetoken()
     listenForMessage()
   }
