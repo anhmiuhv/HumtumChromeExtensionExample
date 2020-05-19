@@ -56,7 +56,12 @@ export default class Auth {
     }
 
     isAuthenticated = () => {
-        return localStorage.humtumAuth !== null
+        try {
+            JSON.parse(localStorage.humtumAuth);
+        } catch (e) {
+            return false;
+        }
+        return true;
     }
 
     isValid = () => {

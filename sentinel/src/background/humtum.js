@@ -1,6 +1,5 @@
 // src/humtum/humtum.js
 import Auth from "/src/background/auth.js";
-import ActionCable from "/src/background/actioncable.js"
 
 // HumTum lib should be unopinionated so should be decoupled from rest of
 // app. (e.g., stores)

@@ -90,7 +90,7 @@ browser.runtime.onMessage.addListener(function (event) {
       .authenticate(options)
       .then(async (authResult) => {
           humtum.getAuth().storeAuthResult(authResult)
-          humtum.scheduleRenewal(refreshthetoken)
+          humtum.getAuth().scheduleRenewal(refreshthetoken)
           let data = await humtum.getSelf()
           data && browser.notifications.create({
             type: 'basic',
