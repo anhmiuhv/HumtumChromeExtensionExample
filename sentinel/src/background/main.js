@@ -59,12 +59,8 @@ browser.runtime.onStartup.addListener(function () {
 
 browser.runtime.onInstalled.addListener(function () {
   if (humtum.getAuth().isAuthenticated()) {
-    authzero = new Auth0Chrome(env.AUTH0_DOMAIN, env.AUTH0_CLIENT_ID)
-    authzero.refreshToken(humtum.getAuth().getRefreshToken())
-      .then(async (authResult) => {
-        humtum.getAuth().storeAuthResult(authResult)
-        listenForMessage()
-      })
+    refreshthetoken()
+    listenForMessage()
   }
 
   if (localStorage.webFilter) {
@@ -94,7 +90,7 @@ browser.runtime.onMessage.addListener(function (event) {
       .authenticate(options)
       .then(async (authResult) => {
           humtum.getAuth().storeAuthResult(authResult)
-          console.log(authResult)
+          humtum.scheduleRenewal(refreshthetoken)
           let data = await humtum.getSelf()
           data && browser.notifications.create({
             type: 'basic',
