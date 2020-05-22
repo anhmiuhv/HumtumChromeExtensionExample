@@ -40,12 +40,21 @@ class HumTum {
     }
 
     getCable = () => {
+        let generateCableToken = () => {
+            const jwt = JSON.stringify({
+                id_token: this.getAuth().getIDToken(),
+                access_token: this.getAuth().getAccessToken()
+            })
+            if (typeof Buffer !== 'undefined')
+                return Buffer.from(jwt, 'utf8').toString('base64').replace("=", "");
+            else
+                return window.btoa(jwt).replace(/=/g, "")
+        }
         if (this.cable)
             return this.cable
-
         this.cable = ActionCable.createConsumer(`ws://localhost:3001/cable`, {
             origin: "http://localhost:3000",
-            token: this.getAuth().getIDToken()
+            token: generateCableToken()
         })
         return this.cable
     }
