@@ -1,9 +1,3 @@
-import Auth from "/src/background/auth.js"
-function isLoggedIn(token) {
-  return true;
-  // return decodeJwt(token).exp > Date.now() / 1000;
-}
-
 function logout() {
   // Remove the idToken from storage
   localStorage.clear();
