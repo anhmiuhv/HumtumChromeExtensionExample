@@ -6,7 +6,16 @@ This Chrome extension uses the authentication library [auth0-chrome](https://git
 
 ## Usage
 
-Step 1. Create the Chrome extension and load it into Chrome. Follow [this](https://developer.chrome.com/extensions/app_identity#copy_key) to make sure that the Extension ID stay constant
+Step 1. Clone this Chrome extension and load it into Chrome. Make sure that the Extension ID stay constant using the following steps:
+* In the `chrome://extensions/` page, pack the extension using `Pack extension` features
+* Use https://robwu.nl/crxviewer/ to view the crx file
+* Open the browser console to get following line
+
+```
+"key": "<your-chrome-extension-key>",
+```
+* copy this `"key": ...` into your `manifest.json`
+* Load the unpacked extension and get your extension ID. This is the constant extension id
 
 Step 2. Create the client ID using humtum OIDC client registration. Make sure that the callback URIs include `chrome-extension://<extension-id>` and `https://<extension-id>.chromiumapp.org/auth0`
 
