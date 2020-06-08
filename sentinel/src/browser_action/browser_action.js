@@ -59,7 +59,7 @@ function renderDefaultView() {
 
 function main() {
   const authResult = JSON.parse(localStorage.humtumAuth || '{}');
-  if (authResult.access_token) {
+  if (authResult.access_token && authResult.expires_in * 1000 - (Date.now() - authResult.start) > 0) {
     renderProfileView(authResult);
   } else {
     renderDefaultView();
