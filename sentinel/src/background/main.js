@@ -30,7 +30,10 @@ function listenForMessage() {
         websitemsg
       } = data && data["payload"] && JSON.parse(data["payload"])
       console.log(data["payload"])
-      filterWeb.set(website, websitemsg)
+      filterWeb.set(website, {
+        websitemsg,
+        sender_id: data["sender_id"]
+      })
       humtum.receiveMessage(data["id"])
       localStorage.webFilter = JSON.stringify(filterWeb.toJSON())
 
@@ -122,7 +125,7 @@ browser.runtime.onMessage.addListener(function (event) {
   }
 });
 
-browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
+browser.tabs.onUpdated.addListener(async (id, changeInfo, tab) => {
   const {
     url
   } = changeInfo;
@@ -134,14 +137,18 @@ browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
     const weburl = protocol + '//' + host;
     const msg = filterWeb.get(weburl)
     if (msg) {
+      let data = await humtum.getUser(msg["sender_id"])
+      const profile = await data.json()
       chrome.notifications.create({
         type: 'basic',
         title: 'Notification',
-        message: msg,
+        message: `${msg.websitemsg} from ${profile.name}`,
         iconUrl: '/icons/icon128.png'
       });
       filterWeb.delete(weburl)
       localStorage.webFilter = JSON.stringify(filterWeb.toJSON())
+
+
     }
   }
 })
